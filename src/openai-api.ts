@@ -1,25 +1,17 @@
-import { getPreferenceValues } from "@raycast/api";
-import { type TranslateRequest, type Preferences, type OpenAIApiResponse } from "./types";
+import { type TranslateRequest, type OpenAIApiResponse } from "./types";
 import { getTranslationPrompt } from "./prompts";
 
 const OPENAI_API_URL = "https://api.openai.com/v1/chat/completions";
 const OPENAI_MODEL = "gpt-5-mini";
 
-export async function translateText({ text, lang }: TranslateRequest): Promise<string> {
-  const preferences = getPreferenceValues<Preferences>();
-  const { openaiApiKey } = preferences;
-
-  if (!openaiApiKey) {
-    throw new Error("OpenAI API key not configured. Please add it in extension preferences.");
-  }
-
+export async function translateText({ text, lang, apiKey }: TranslateRequest): Promise<string> {
   const prompt = getTranslationPrompt(text, lang);
 
   const response = await fetch(OPENAI_API_URL, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${openaiApiKey}`,
+      Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
       model: OPENAI_MODEL,

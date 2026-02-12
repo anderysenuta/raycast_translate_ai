@@ -1,10 +1,10 @@
 {
   "$schema": "https://www.raycast.com/schemas/extension.json",
   "name": "translate-ai",
-  "title": "translate-ai",
+  "title": "Translate AI",
   "description": "Raycast extension to translate text using AI api",
   "icon": "extension-icon.png",
-  "author": "Andrei_Sianiuta",
+  "author": "andrei_sianiuta",
   "platforms": [
     "macOS",
     "Windows"
@@ -50,8 +50,7 @@
     }
   ],
   "dependencies": {
-    "@raycast/api": "^1.104.1",
-    "@raycast/utils": "^1.17.0"
+    "@raycast/api": "^1.104.1"
   },
   "devDependencies": {
     "@raycast/eslint-config": "^2.0.4",

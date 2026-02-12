@@ -1,8 +1,15 @@
-export type TargetLanguage = "en" | "pl" | "ru";
+export const LANGUAGES = [
+  { code: "en", label: "EN", name: "English" },
+  { code: "pl", label: "PL", name: "Polish" },
+  { code: "ru", label: "RU", name: "Russian" },
+] as const;
+
+export type TargetLanguage = (typeof LANGUAGES)[number]["code"];
 
 export interface TranslateRequest {
   text: string;
   lang: TargetLanguage;
+  apiKey: string;
 }
 
 export interface ClaudeMessage {
@@ -51,6 +58,14 @@ export interface OpenAIApiResponse {
     total_tokens: number;
   };
 }
+
+export const TOAST_MESSAGES = {
+  emptyText: { title: "Error", message: "Please enter text to translate" },
+  noApiKey: { title: "Error", message: "Please configure Claude or OpenAI API key in preferences" },
+  success: { title: "Translation complete" },
+  successCopied: { title: "Translation complete", message: "Copied to clipboard" },
+  failure: { title: "Translation failed" },
+} as const;
 
 // raycast preferences
 export interface Preferences {

@@ -9,37 +9,25 @@ import {
   Clipboard,
   getPreferenceValues,
 } from "@raycast/api";
-import { type TargetLanguage, type Preferences } from "./types";
-import { translateRequest as translateWithClaude } from "./claude-api";
+import { type TargetLanguage, type Preferences, LANGUAGES, TOAST_MESSAGES } from "./types";
+import { translateText as translateWithClaude } from "./claude-api";
 import { translateText as translateWithOpenAI } from "./openai-api";
 
 export default function Command() {
-  const preferences = getPreferenceValues<Preferences>();
+  const { claudeApiKey, openaiApiKey, copyToClipboard } = getPreferenceValues<Preferences>();
   const [text, setText] = useState<string>("");
   const [translation, setTranslation] = useState<string>("");
   const [isTranslating, setIsTranslating] = useState<boolean>(false);
 
-  const handleTextChange = (newValue: string) => {
-    setText(newValue);
-  };
-
   const handleSubmit = async (lang: TargetLanguage) => {
     if (!text.trim()) {
-      await showToast({
-        style: Toast.Style.Failure,
-        title: "Error",
-        message: "Please enter text to translate",
-      });
+      await showToast({ style: Toast.Style.Failure, ...TOAST_MESSAGES.emptyText });
       return;
     }
 
     // validate at least one api key is provided
-    if (!preferences.claudeApiKey && !preferences.openaiApiKey) {
-      await showToast({
-        style: Toast.Style.Failure,
-        title: "Error",
-        message: "Please configure Claude or OpenAI API key in preferences",
-      });
+    if (!claudeApiKey && !openaiApiKey) {
+      await showToast({ style: Toast.Style.Failure, ...TOAST_MESSAGES.noApiKey });
       return;
     }
 
@@ -47,32 +35,25 @@ export default function Command() {
     setTranslation("");
 
     try {
-      // auto-detect which api to use based on which key is provided
-      // prefer claude if both are provided
-      const result = preferences.claudeApiKey
-        ? await translateWithClaude({ text, lang })
-        : await translateWithOpenAI({ text, lang });
+      // prefer claude if both keys are provided
+      const result = claudeApiKey
+        ? await translateWithClaude({ text, lang, apiKey: claudeApiKey })
+        : await translateWithOpenAI({ text, lang, apiKey: openaiApiKey! });
 
       setTranslation(result);
 
-      // conditionally copy to clipboard
-      if (preferences.copyToClipboard) {
+      if (copyToClipboard) {
         await Clipboard.copy(result);
       }
 
       await showToast({
         style: Toast.Style.Success,
-        title: "Translation complete",
-        message: preferences.copyToClipboard ? "Copied to clipboard" : undefined,
+        ...(copyToClipboard ? TOAST_MESSAGES.successCopied : TOAST_MESSAGES.success),
       });
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
 
-      await showToast({
-        style: Toast.Style.Failure,
-        title: "Translation failed",
-        message: errorMessage,
-      });
+      await showToast({ style: Toast.Style.Failure, ...TOAST_MESSAGES.failure, message: errorMessage });
     } finally {
       setIsTranslating(false);
     }
@@ -88,13 +69,6 @@ export default function Command() {
       }
     };
     void init();
-
-    return () => {
-      console.log('aaa');
-      setText('');
-      setTranslation('');
-      setIsTranslating(false);
-    }
   }, []);
 
   return (
@@ -103,9 +77,9 @@ export default function Command() {
       actions={
         <ActionPanel>
           <ActionPanel.Submenu title="Translate to …">
-            <Action title="EN" onAction={() => handleSubmit("en" as TargetLanguage)} />
-            <Action title="RU" onAction={() => handleSubmit("ru" as TargetLanguage)} />
-            <Action title="PL" onAction={() => handleSubmit("pl" as TargetLanguage)} />
+            {LANGUAGES.map((lang) => (
+              <Action key={lang.code} title={lang.label} onAction={() => handleSubmit(lang.code)} />
+            ))}
           </ActionPanel.Submenu>
         </ActionPanel>
       }
@@ -115,7 +89,7 @@ export default function Command() {
         title="Source Text"
         placeholder="Enter text to translate..."
         value={text}
-        onChange={handleTextChange}
+        onChange={setText}
       />
       <Form.Separator />
       <Form.TextArea

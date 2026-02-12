@@ -1,24 +1,11 @@
-import { getPreferenceValues } from "@raycast/api";
-import {
-  type TranslateRequest,
-  type ClaudeApiRequest,
-  type ClaudeApiResponse,
-  type Preferences,
-} from "./types";
+import { type TranslateRequest, type ClaudeApiRequest, type ClaudeApiResponse } from "./types";
 import { getTranslationPrompt } from "./prompts";
 
 const CLAUDE_API_URL = "https://api.anthropic.com/v1/messages";
 const CLAUDE_API_VERSION = "2023-06-01";
 const CLAUDE_MODEL = "claude-haiku-4-5-20251001";
 
-export async function translateRequest({ text, lang }: TranslateRequest): Promise<string> {
-  const preferences = getPreferenceValues<Preferences>();
-  const { claudeApiKey } = preferences;
-
-  if (!claudeApiKey) {
-    throw new Error("Claude API key not configured. Please add it in extension preferences.");
-  }
-
+export async function translateText({ text, lang, apiKey }: TranslateRequest): Promise<string> {
   const prompt = getTranslationPrompt(text, lang);
 
   const requestBody: ClaudeApiRequest = {
@@ -36,7 +23,7 @@ export async function translateRequest({ text, lang }: TranslateRequest): Promis
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "x-api-key": claudeApiKey,
+      "x-api-key": apiKey,
       "anthropic-version": CLAUDE_API_VERSION,
     },
     body: JSON.stringify(requestBody),
@@ -47,7 +34,7 @@ export async function translateRequest({ text, lang }: TranslateRequest): Promis
     throw new Error(`Claude API error (${response.status}): ${errorText}`);
   }
 
-  const data = await response.json() as ClaudeApiResponse;
+  const data = (await response.json()) as ClaudeApiResponse;
 
   if (data.content && data.content.length > 0) {
     return data.content[0].text;
